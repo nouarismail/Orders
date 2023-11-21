@@ -9,7 +9,9 @@ namespace Orders.Models
     public class OrderItem
     {
         public int Id {get; set;}
+        [ForeignKey("Order")]
         public int OrderId{get; set;}
+        public Order? Order {get; set;}
         [Column(TypeName = "nvarchar(max)")]
         public string? Name {get; set;}
         [Column(TypeName = "decimal(18, 3)")]

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using MvcMovie.Data;
+using Orders.Data;
 var builder = WebApplication.CreateBuilder(args);
 // builder.Services.AddDbContext<OrdersApplicationDbContext>(options =>
 //     options.UseSqlite(builder.Configuration.GetConnectionString("OrdersApplicationDbContext") ?? throw new InvalidOperationException("Connection string 'OrdersApplicationDbContext' not found.")));
@@ -31,6 +31,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Orders}/{action=Index}/{id?}");
 
 app.Run();

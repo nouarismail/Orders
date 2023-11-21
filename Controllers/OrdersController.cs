@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using MvcMovie.Data;
+using Orders.Data;
 using Orders.Models;
 
 namespace Orders.Controllers
@@ -22,9 +22,8 @@ namespace Orders.Controllers
         // GET: Orders
         public async Task<IActionResult> Index()
         {
-              return _context.Order != null ? 
-                          View(await _context.Order.ToListAsync()) :
-                          Problem("Entity set 'OrdersApplicationDbContext.Order'  is null.");
+            var ordersApplicationDbContext = _context.Order.Include(o => o.Supplier);
+            return View(await ordersApplicationDbContext.ToListAsync());
         }
 
         // GET: Orders/Details/5
@@ -36,6 +35,7 @@ namespace Orders.Controllers
             }
 
             var order = await _context.Order
+                .Include(o => o.Supplier)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (order == null)
             {
@@ -48,7 +48,13 @@ namespace Orders.Controllers
         // GET: Orders/Create
         public IActionResult Create()
         {
-            return View();
+            ViewData["SupplierId"] = new SelectList(_context.Supplier, "Id", "Name");
+            Order o = new Order(){OrderItems = new List<OrderItem>()};
+            o.OrderItems.Add(new OrderItem(){
+                Id=1
+            });
+            
+            return View(o);
         }
 
         // POST: Orders/Create
@@ -56,7 +62,7 @@ namespace Orders.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Number,Date,SupplierId")] Order order)
+        public async Task<IActionResult> Create([Bind("Id,Number,Date,SupplierId,OrderItems")] Order order)
         {
             if (ModelState.IsValid)
             {
@@ -64,6 +70,7 @@ namespace Orders.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            ViewData["SupplierId"] = new SelectList(_context.Supplier, "Id", "Name", order.SupplierId);
             return View(order);
         }
 
@@ -75,11 +82,12 @@ namespace Orders.Controllers
                 return NotFound();
             }
 
-            var order = await _context.Order.FindAsync(id);
+            var order = await _context.Order.Include(o=>o.OrderItems).FirstOrDefaultAsync(i => i.Id == id);
             if (order == null)
             {
                 return NotFound();
             }
+            ViewData["SupplierId"] = new SelectList(_context.Supplier, "Id", "Name", order.SupplierId);
             return View(order);
         }
 
@@ -115,6 +123,7 @@ namespace Orders.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            ViewData["SupplierId"] = new SelectList(_context.Supplier, "Id", "Name", order.SupplierId);
             return View(order);
         }
 
@@ -127,6 +136,7 @@ namespace Orders.Controllers
             }
 
             var order = await _context.Order
+                .Include(o => o.Supplier)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (order == null)
             {

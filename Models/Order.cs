@@ -9,12 +9,19 @@ namespace Orders.Models
 {
     public class Order
     {
+        public Order(){
+            OrderItems = new List<OrderItem>();
+        }
         public int Id {get; set;}
         [Column(TypeName = "nvarchar(max)")]
         public string? Number {get; set;}
         [Column(TypeName = "datetime2")]
         public DateTime Date{get; set;}
+        [ForeignKey("Supplier")]
         public int SupplierId{get; set;}
+        public Supplier? Supplier{get; set;}
+
+        public virtual List<OrderItem> OrderItems {get; set;}
 
     }
 }
