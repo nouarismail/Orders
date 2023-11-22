@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -96,7 +97,7 @@ namespace Orders.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Number,Date,SupplierId")] Order order)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Number,Date,SupplierId,OrderItems")] Order order)
         {
             if (id != order.Id)
             {
@@ -107,7 +108,36 @@ namespace Orders.Controllers
             {
                 try
                 {
-                    _context.Update(order);
+                    Order orderToUpdate = _context.Order.Find(id);
+                    orderToUpdate.SupplierId = order.SupplierId;
+                    orderToUpdate.Number = order.Number;
+                    orderToUpdate.Date = order.Date;
+                    _context.Order.Update(orderToUpdate);
+
+                    Order oldOrder = _context.Order.Include(o=>o.OrderItems).FirstOrDefault(o=>o.Id==id);
+                    List<int>OldOrderItemsIds = oldOrder.OrderItems.Select(oi=>oi.Id).ToList();
+                    List<int> newOrderItemsIds = order.OrderItems.Select(oi => oi.Id).ToList();
+                    
+                    foreach(OrderItem oi in oldOrder.OrderItems)
+                    {
+                        if(newOrderItemsIds.Contains(oi.Id)){
+                            //update oi
+                            OrderItem newOrderItem = order.OrderItems.FirstOrDefault(item=>item.Id == oi.Id);
+                            oi.Name = newOrderItem.Name;
+                            oi.Unit = newOrderItem.Unit;
+                            oi.Quantity = newOrderItem.Quantity;
+                            _context.OrderItem.Update(oi);
+                        }
+                        else{
+                            //remove the oi
+                            _context.OrderItem.Remove(oi);
+                        }  
+                    }
+                    List<OrderItem> newOrderItems = order.OrderItems.Where(oi=>oi.Id==-1).ToList();
+                    foreach(OrderItem oi in newOrderItems){
+                        _context.OrderItem.Add(new OrderItem{OrderId=order.Id, Name=oi.Name, Quantity=oi.Quantity,Unit=oi.Unit});
+                    }
+
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
