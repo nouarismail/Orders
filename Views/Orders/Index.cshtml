@@ -3,20 +3,54 @@
 @{
     ViewData["Title"] = "Index";
 }
+<style>
+    #orderNumbers {
+        width: 200px;
+        /* Set the width according to your preference */
+        padding: 5px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+        /* Set the background color */
+        color: #333;
+        /* Set the text color */
+    }
+
+    /* Style the dropdown arrow */
+    #orderNumbers::-ms-expand {
+        display: none;
+    }
+
+    #orderNumbers option {
+        padding: 5px;
+    }
+</style>
 
 <h1>Index</h1>
 
 <p>
     <a asp-action="Create">Create New</a>
 </p>
+<div>
+    <form action="@Url.Action("Index", "Orders")" method="get" id="filterForm">
+        <label for="orderNumbers">Order Number:</label>
+        <input type="text" id="orderNumbers" name="orderNumbers" class="autocomplete" multiple="multiple" />
+        <input type="hidden" id="selectedOrderNumbers" name="selectedOrderNumbers" />
+        <input type="submit" value="Apply Filter" />
+    </form>
+</div>
 <table class="table">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Number)
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["NumberSortParm"]">@Html.DisplayNameFor(model =>
+                    model.Number)</a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Date)
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["DateSortParm"]">@Html.DisplayNameFor(model =>
+                    model.Date)</a>
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.Supplier)
@@ -25,23 +59,69 @@
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Number)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Date)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Supplier.Name)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Number)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Date)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Supplier.Name)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
+
+@section Scripts {
+
+    <script type="text/javascript">
+        $(function () {
+            $("#orderNumbers").autocomplete({
+                source: function (request, response) {
+                    console.log('im here');
+                    $.ajax({
+                        url: '@Url.Action("GetAutocompleteValues", "Orders")',
+                        type: "GET",
+                        data: { term: request.term },
+                        success: function (data) {
+                            response(data);
+                        }
+                    });
+                },
+                minLength: 1,
+                multiple: true, // Enable multiple selection
+                select: function (event, ui) {
+                    var terms = $("#orderNumbers").val().split(", ");
+                    terms.pop();
+                    terms.push(ui.item.value);
+                    terms.push("");
+                    $("#orderNumbers").val(terms.join(", "));
+
+                    // Set the hidden input value with selected order numbers
+                    $("#selectedOrderNumbers").val(terms.join(", "));
+                    return false;
+                }
+            });
+
+            // Handle form submission to prevent duplicate values in the hidden input
+            $("#filterForm").submit(function () {
+                var terms = $("#orderNumbers").val().split(", ");
+                terms.pop();
+                $("#selectedOrderNumbers").val(terms.join(", "));
+                return true;
+            });
+        });
+
+       
+    </script>
+
+}

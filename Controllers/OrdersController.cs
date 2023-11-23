@@ -21,10 +21,75 @@ namespace Orders.Controllers
         }
 
         // GET: Orders
-        public async Task<IActionResult> Index()
+        // public async Task<IActionResult> Index()
+        // {
+        //     var ordersApplicationDbContext = _context.Order.Include(o => o.Supplier);
+        //     return View(await ordersApplicationDbContext.ToListAsync());
+        // }
+        public async Task<IActionResult> Index(string sortOrder, string selectedOrderNumbers)
         {
-            var ordersApplicationDbContext = _context.Order.Include(o => o.Supplier);
-            return View(await ordersApplicationDbContext.ToListAsync());
+            ViewData["NumberSortParm"] = String.IsNullOrEmpty(sortOrder) ? "number_desc" : "";
+            ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
+            var orders = from s in _context.Order.Include(o => o.Supplier)
+                         select s;
+
+            if (!string.IsNullOrEmpty(selectedOrderNumbers))
+
+            {
+                
+                var ordersList = _context.Order.Include(o => o.Supplier).ToList();
+                
+                var termsArray = selectedOrderNumbers.Split(',').Select(t => t.Trim()).ToArray();
+                ordersList = ordersList.Where(o => termsArray.Any(t => o.Number.Contains(t))).ToList();
+                orders = from s in ordersList.AsQueryable()
+                         select s;
+            }
+            switch (sortOrder)
+            {
+                case "number_desc":
+                    orders = orders.OrderByDescending(s => s.Number);
+                    break;
+                case "Date":
+                    orders = orders.OrderBy(o => o.Date);
+                    break;
+                case "date_desc":
+                    orders = orders.OrderByDescending(s => s.Date);
+                    break;
+                default:
+                    orders = orders.OrderBy(s => s.Number);
+                    break;
+            }
+
+
+            return View(orders);
+        }
+
+        public ActionResult GetAutocompleteValues(string term)
+        {
+            if (string.IsNullOrEmpty(term))
+            {
+                return Json(new List<string>());
+            }
+
+            var termsArray = term.Split(',').Select(t => t.Trim()).ToArray();
+            var orders = _context.Order.ToList();
+            var ors = orders.Where(o => termsArray.Any(t => o.Number.Contains(t))).ToList();
+            var autocompleteValues = ors
+                .Select(order => order.Number)
+                .Distinct()
+                .ToList();
+
+            return Json(autocompleteValues);
+        }
+
+        public ActionResult FilterOrders(string[] selectedOrderNumbers)
+        {
+            // Use selectedOrderNumbers in your filtering logic
+            var filteredOrders = _context.Order
+                .Where(o => selectedOrderNumbers.Contains(o.Number))
+                .ToList();
+
+            return View("Index", filteredOrders);
         }
 
         // GET: Orders/Details/5
@@ -50,11 +115,9 @@ namespace Orders.Controllers
         public IActionResult Create()
         {
             ViewData["SupplierId"] = new SelectList(_context.Supplier, "Id", "Name");
-            Order o = new Order(){OrderItems = new List<OrderItem>()};
-            o.OrderItems.Add(new OrderItem(){
-                Id=1
-            });
-            
+            Order o = new Order() { OrderItems = new List<OrderItem>() };
+            o.OrderItems.Add(new OrderItem());
+
             return View(o);
         }
 
@@ -67,7 +130,13 @@ namespace Orders.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(order);
+                Order o = new Order() { Number = order.Number, Date = order.Date, SupplierId = order.SupplierId };
+                _context.Order.Add(o);
+                await _context.SaveChangesAsync();
+                foreach (OrderItem oi in order.OrderItems)
+                {
+                    _context.OrderItem.Add(new OrderItem { Name = oi.Name, OrderId = o.Id, Quantity = oi.Quantity, Unit = oi.Unit });
+                }
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
@@ -83,7 +152,7 @@ namespace Orders.Controllers
                 return NotFound();
             }
 
-            var order = await _context.Order.Include(o=>o.OrderItems).FirstOrDefaultAsync(i => i.Id == id);
+            var order = await _context.Order.Include(o => o.OrderItems).FirstOrDefaultAsync(i => i.Id == id);
             if (order == null)
             {
                 return NotFound();
@@ -114,28 +183,31 @@ namespace Orders.Controllers
                     orderToUpdate.Date = order.Date;
                     _context.Order.Update(orderToUpdate);
 
-                    Order oldOrder = _context.Order.Include(o=>o.OrderItems).FirstOrDefault(o=>o.Id==id);
-                    List<int>OldOrderItemsIds = oldOrder.OrderItems.Select(oi=>oi.Id).ToList();
+                    Order oldOrder = _context.Order.Include(o => o.OrderItems).FirstOrDefault(o => o.Id == id);
+                    List<int> OldOrderItemsIds = oldOrder.OrderItems.Select(oi => oi.Id).ToList();
                     List<int> newOrderItemsIds = order.OrderItems.Select(oi => oi.Id).ToList();
-                    
-                    foreach(OrderItem oi in oldOrder.OrderItems)
+
+                    foreach (OrderItem oi in oldOrder.OrderItems)
                     {
-                        if(newOrderItemsIds.Contains(oi.Id)){
+                        if (newOrderItemsIds.Contains(oi.Id))
+                        {
                             //update oi
-                            OrderItem newOrderItem = order.OrderItems.FirstOrDefault(item=>item.Id == oi.Id);
+                            OrderItem newOrderItem = order.OrderItems.FirstOrDefault(item => item.Id == oi.Id);
                             oi.Name = newOrderItem.Name;
                             oi.Unit = newOrderItem.Unit;
                             oi.Quantity = newOrderItem.Quantity;
                             _context.OrderItem.Update(oi);
                         }
-                        else{
+                        else
+                        {
                             //remove the oi
                             _context.OrderItem.Remove(oi);
-                        }  
+                        }
                     }
-                    List<OrderItem> newOrderItems = order.OrderItems.Where(oi=>oi.Id==-1).ToList();
-                    foreach(OrderItem oi in newOrderItems){
-                        _context.OrderItem.Add(new OrderItem{OrderId=order.Id, Name=oi.Name, Quantity=oi.Quantity,Unit=oi.Unit});
+                    List<OrderItem> newOrderItems = order.OrderItems.Where(oi => oi.Id == -1).ToList();
+                    foreach (OrderItem oi in newOrderItems)
+                    {
+                        _context.OrderItem.Add(new OrderItem { OrderId = order.Id, Name = oi.Name, Quantity = oi.Quantity, Unit = oi.Unit });
                     }
 
                     await _context.SaveChangesAsync();
@@ -190,14 +262,14 @@ namespace Orders.Controllers
             {
                 _context.Order.Remove(order);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool OrderExists(int id)
         {
-          return (_context.Order?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Order?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }
