@@ -3,42 +3,55 @@
 @{
     ViewData["Title"] = "Index";
 }
-<style>
-    #orderNumbers {
-        width: 200px;
-        /* Set the width according to your preference */
-        padding: 5px;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-        background-color: #fff;
-        /* Set the background color */
-        color: #333;
-        /* Set the text color */
-    }
 
-    /* Style the dropdown arrow */
-    #orderNumbers::-ms-expand {
-        display: none;
-    }
 
-    #orderNumbers option {
-        padding: 5px;
-    }
-</style>
-
-<h1>Index</h1>
+<h1>Orders</h1>
 
 <p>
     <a asp-action="Create">Create New</a>
 </p>
-<div>
-    <form action="@Url.Action("Index", "Orders")" method="get" id="filterForm">
-        <label for="orderNumbers">Order Number:</label>
-        <input type="text" id="orderNumbers" name="orderNumbers" class="autocomplete" multiple="multiple" />
-        <input type="hidden" id="selectedOrderNumbers" name="selectedOrderNumbers" />
-        <input type="submit" value="Apply Filter" />
+<div class="container mt-4">
+    <h2>Filters</h2>
+    <form action="@Url.Action("Index", "Orders")" method="get" id="filterForm" onsubmit="submitForm(event)">
+        <div class="form-group">
+            <label for="orderNumbers">Order Number:</label>
+            <select id="orderNumbers" name="selectedOrderNumbers" class="form-control" multiple="multiple">
+            </select>
+
+
+            <label for="selectedSuppliers">Suppliers:</label>
+            <select id="selectedSuppliers" name="selectedSupplierIds" class="form-control" multiple="multiple">
+                @foreach (var supplier in (List<Supplier>)ViewData["Suppliers"])
+                {
+                    <option value="@supplier.Id">@supplier.Name</option>
+                }
+            </select>
+
+            <label for="orderItems">Order Items:</label>
+            <select id="orderItems" name="selectedOrderItemIds" class="form-control" multiple="multiple">
+            </select>
+            <p></p>
+            <div class="row mb-3">
+                <label for="toDate" class="col-sm-2 col-form-label">To Date:</label>
+                <div class="col-sm-4">
+                    <input type="date" class="form-control" id="toDate" name="toDate"
+                        value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                </div>
+
+                <label for="fromDate" class="col-sm-2 col-form-label">From Date:</label>
+                <div class="col-sm-4">
+                    <input type="date" class="form-control" id="fromDate" name="fromDate"
+                        value="@DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")">
+                </div>
+            </div>
+
+        </div>
+        <p></p>
+        <div class="form-group">
+            <input type="hidden" id="hiddenFromDate" name="hiddenFromDate" /> 
+            <input type="hidden" id="hiddenToDate" name="hiddenToDate" />
+            <input type="submit" value="Apply Filter" class="btn btn-primary" />
+        </div>
     </form>
 </div>
 <table class="table">
@@ -84,44 +97,128 @@
 @section Scripts {
 
     <script type="text/javascript">
-        $(function () {
-            $("#orderNumbers").autocomplete({
-                source: function (request, response) {
-                    console.log('im here');
-                    $.ajax({
-                        url: '@Url.Action("GetAutocompleteValues", "Orders")',
-                        type: "GET",
-                        data: { term: request.term },
-                        success: function (data) {
-                            response(data);
-                        }
-                    });
+        $(document).ready(function () {
+            $('#orderNumbers').select2({
+                ajax: {
+                    url: '@Url.Action("GetOrderNumbers", "Orders")',
+                    dataType: 'json',
+                    delay: 250,
+                    processResults: function (data) {
+                        return {
+                            results: $.map(data, function (order) {
+                                return {
+                                    id: order.id,
+                                    text: order.number
+                                };
+                            })
+                        };
+                    },
+                    cache: true
                 },
-                minLength: 1,
-                multiple: true, // Enable multiple selection
-                select: function (event, ui) {
-                    var terms = $("#orderNumbers").val().split(", ");
-                    terms.pop();
-                    terms.push(ui.item.value);
-                    terms.push("");
-                    $("#orderNumbers").val(terms.join(", "));
-
-                    // Set the hidden input value with selected order numbers
-                    $("#selectedOrderNumbers").val(terms.join(", "));
-                    return false;
-                }
+                minimumInputLength: 1 // Minimum characters before making an AJAX call
             });
 
-            // Handle form submission to prevent duplicate values in the hidden input
-            $("#filterForm").submit(function () {
-                var terms = $("#orderNumbers").val().split(", ");
-                terms.pop();
-                $("#selectedOrderNumbers").val(terms.join(", "));
-                return true;
+            $('#orderItems').select2({
+                ajax: {
+                    url: '@Url.Action("GetOrderItems", "Orders")',
+                    dataType: 'json',
+                    delay: 250,
+                    processResults: function (data) {
+                        return {
+                            results: $.map(data, function (orderItem) {
+                                return {
+                                    id: orderItem.name,
+                                    text: orderItem.name
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1 // Minimum characters before making an AJAX call
             });
+
+            $('#selectedSuppliers').select2();
         });
 
-       
+        function submitForm(event) {
+        // Prevent the default form submission
+        event.preventDefault();
+
+        // Get the values from date inputs
+        var startDateValue = document.getElementById('fromDate').value;
+        var endDateValue = document.getElementById('toDate').value;
+
+        // Set the values to hidden inputs
+        document.getElementById('hiddenFromDate').value = startDateValue;
+        document.getElementById('hiddenToDate').value = endDateValue;
+
+        // Continue submitting the form
+        document.getElementById('filterForm').submit();
+    }
+
+        @* $(function () {
+        $("#orderNumbers").autocomplete({
+        source: function (request, response) {
+        console.log('im here');
+        $.ajax({
+        url: '@Url.Action("GetAutocompleteValues", "Orders")',
+        type: "GET",
+        data: { term: request.term },
+        success: function (data) {
+        response(data);
+        }
+        });
+        },
+        minLength: 1,
+        multiple: true, // Enable multiple selection
+        select: function (event, ui) {
+        var terms = $("#orderNumbers").val().split(", ");
+        terms.pop();
+        terms.push(ui.item.value);
+        terms.push("");
+        $("#orderNumbers").val(terms.join(", "));
+
+        // Set the hidden input value with selected order numbers
+        $("#selectedOrderNumbers").val(terms.join(", "));
+        return false;
+        }
+        });
+
+        // Handle form submission to prevent duplicate values in the hidden input
+        $("#filterForm").submit(function () {
+        var terms = $("#orderNumbers").val().split(", ");
+        terms.pop();
+        $("#selectedOrderNumbers").val(terms.join(", "));
+        return true;
+        });
+        }); *@
+
+        @* $(document).ready(function () {
+        $('#selectedSuppliers').select2({
+        ajax: {
+        url: '@Url.Action("GetSuppliers", "Orders")',
+        dataType: 'json',
+        delay: 250,
+        processResults: function (data) {
+        return {
+        results: $.map(data, function (supplier) {
+        return {
+        id: supplier.id,
+        text: supplier.name
+        };
+        })
+        };
+        },
+        cache: true
+        },
+        minimumInputLength: 1 // Minimum characters before making an AJAX call
+        });
+
+
+        }); *@
+
+
     </script>
 
 }

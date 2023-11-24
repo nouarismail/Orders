@@ -26,24 +26,44 @@ namespace Orders.Controllers
         //     var ordersApplicationDbContext = _context.Order.Include(o => o.Supplier);
         //     return View(await ordersApplicationDbContext.ToListAsync());
         // }
-        public async Task<IActionResult> Index(string sortOrder, string selectedOrderNumbers)
+        public async Task<IActionResult> Index(string sortOrder, 
+        int? []selectedOrderNumbers,
+        int? []selectedSupplierIds,
+        string[]selectedOrderItemIds,
+        string hiddenFromDate,
+        string hiddenToDate)
         {
             ViewData["NumberSortParm"] = String.IsNullOrEmpty(sortOrder) ? "number_desc" : "";
             ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
+            ViewData["Suppliers"] = _context.Supplier.ToList();
             var orders = from s in _context.Order.Include(o => o.Supplier)
                          select s;
 
-            if (!string.IsNullOrEmpty(selectedOrderNumbers))
-
+            if (selectedOrderNumbers!=null  && selectedOrderNumbers.Length>0)
             {
-                
-                var ordersList = _context.Order.Include(o => o.Supplier).ToList();
-                
-                var termsArray = selectedOrderNumbers.Split(',').Select(t => t.Trim()).ToArray();
-                ordersList = ordersList.Where(o => termsArray.Any(t => o.Number.Contains(t))).ToList();
-                orders = from s in ordersList.AsQueryable()
-                         select s;
+
+                orders = orders.Where(o=> selectedOrderNumbers.Contains(o.Id));
+
             }
+            if (selectedSupplierIds!=null  && selectedSupplierIds.Length>0)
+            {
+
+                orders = orders.Where(o=> selectedSupplierIds.Contains(o.SupplierId));
+
+            }
+            if (selectedOrderItemIds!=null  && selectedOrderItemIds.Length>0)
+            {
+
+                orders = orders.Where(o=> o.OrderItems.Any(oi=>selectedOrderItemIds.Contains(oi.Name)));
+
+            }
+            if(!String.IsNullOrEmpty(hiddenToDate)&&!String.IsNullOrEmpty(hiddenFromDate))
+            {
+                DateTime frmDate = DateTime.Parse(hiddenFromDate);
+                DateTime tDate = DateTime.Parse(hiddenToDate);
+                orders = orders.Where(o=> o.Date>=frmDate && o.Date<=tDate);
+            }
+
             switch (sortOrder)
             {
                 case "number_desc":
@@ -61,7 +81,7 @@ namespace Orders.Controllers
             }
 
 
-            return View(orders);
+            return View(await orders.ToListAsync());
         }
 
         public ActionResult GetAutocompleteValues(string term)
@@ -80,6 +100,43 @@ namespace Orders.Controllers
                 .ToList();
 
             return Json(autocompleteValues);
+        }
+
+        [HttpGet]
+        public JsonResult GetSuppliers(string term)
+        {
+            // Query the database or any other data source based on the 'term' parameter
+            var suppliers = _context.Supplier
+                .Where(s => s.Name.Contains(term))
+                .Select(s => new { id = s.Id, name = s.Name })
+                .ToList();
+
+            return Json(suppliers);
+        }
+
+        [HttpGet]
+        public JsonResult GetOrderItems(string term)
+        {
+            // Query the database or any other data source based on the 'term' parameter
+            var orderItems = _context.OrderItem
+                .Where(oi => oi.Name.Contains(term))
+                .Select(oi => new { id = oi.Id, name = oi.Name })
+                .ToList();
+
+            return Json(orderItems);
+        }
+
+        [HttpGet]
+        public JsonResult GetOrderNumbers(string term)
+        {
+            // Query the database or any other data source based on the 'term' parameter
+            var orderNumbers = _context.Order
+                .Where(o => o.Number.Contains(term))
+                .Select(o => new { id = o.Id,number = o.Number })
+                .Distinct()
+                .ToList();
+
+            return Json(orderNumbers);
         }
 
         public ActionResult FilterOrders(string[] selectedOrderNumbers)
