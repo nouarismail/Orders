@@ -1,3 +1,5 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 @model IEnumerable<Orders.Models.Order>
 
 @{
@@ -5,7 +7,7 @@
 }
 
 
-<h1>Orders</h1>
+<h1>@Localizer["Orders"]</h1>
 
 <p>
     <a asp-action="Create">Create New</a>
