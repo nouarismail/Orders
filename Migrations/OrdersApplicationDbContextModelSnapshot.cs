@@ -34,7 +34,8 @@ namespace Orders.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Number")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
@@ -42,6 +43,9 @@ namespace Orders.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("SupplierId");
+
+                    b.HasIndex("Number", "SupplierId")
+                        .IsUnique();
 
                     b.ToTable("Order");
                 });
@@ -55,6 +59,7 @@ namespace Orders.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("OrderId")
@@ -64,6 +69,7 @@ namespace Orders.Migrations
                         .HasColumnType("decimal(18, 3)");
 
                     b.Property<string>("Unit")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -82,6 +88,7 @@ namespace Orders.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

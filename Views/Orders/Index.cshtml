@@ -10,9 +10,9 @@
 <h1>@Localizer["Orders"]</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary" >Create New</a>
 </p>
-<div class="container mt-4">
+<div class="container mt-4" style="border: 2px solid #000000; padding: 10px;">
     <h2>Filters</h2>
     <form action="@Url.Action("Index", "Orders")" method="get" id="filterForm" onsubmit="submitForm(event)">
         <div class="form-group">

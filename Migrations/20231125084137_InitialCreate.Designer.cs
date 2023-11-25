@@ -12,8 +12,8 @@ using Orders.Data;
 namespace Orders.Migrations
 {
     [DbContext(typeof(OrdersApplicationDbContext))]
-    [Migration("20231119090630_migration_1")]
-    partial class migration1
+    [Migration("20231125084137_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -37,7 +37,8 @@ namespace Orders.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Number")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
@@ -45,6 +46,9 @@ namespace Orders.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("SupplierId");
+
+                    b.HasIndex("Number", "SupplierId")
+                        .IsUnique();
 
                     b.ToTable("Order");
                 });
@@ -58,6 +62,7 @@ namespace Orders.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("OrderId")
@@ -67,6 +72,7 @@ namespace Orders.Migrations
                         .HasColumnType("decimal(18, 3)");
 
                     b.Property<string>("Unit")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -85,6 +91,7 @@ namespace Orders.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

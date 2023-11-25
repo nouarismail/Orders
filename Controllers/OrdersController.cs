@@ -26,10 +26,10 @@ namespace Orders.Controllers
         //     var ordersApplicationDbContext = _context.Order.Include(o => o.Supplier);
         //     return View(await ordersApplicationDbContext.ToListAsync());
         // }
-        public async Task<IActionResult> Index(string sortOrder, 
-        int? []selectedOrderNumbers,
-        int? []selectedSupplierIds,
-        string[]selectedOrderItemIds,
+        public async Task<IActionResult> Index(string sortOrder,
+        int?[] selectedOrderNumbers,
+        int?[] selectedSupplierIds,
+        string[] selectedOrderItemIds,
         string hiddenFromDate,
         string hiddenToDate)
         {
@@ -39,29 +39,29 @@ namespace Orders.Controllers
             var orders = from s in _context.Order.Include(o => o.Supplier)
                          select s;
 
-            if (selectedOrderNumbers!=null  && selectedOrderNumbers.Length>0)
+            if (selectedOrderNumbers != null && selectedOrderNumbers.Length > 0)
             {
 
-                orders = orders.Where(o=> selectedOrderNumbers.Contains(o.Id));
+                orders = orders.Where(o => selectedOrderNumbers.Contains(o.Id));
 
             }
-            if (selectedSupplierIds!=null  && selectedSupplierIds.Length>0)
+            if (selectedSupplierIds != null && selectedSupplierIds.Length > 0)
             {
 
-                orders = orders.Where(o=> selectedSupplierIds.Contains(o.SupplierId));
+                orders = orders.Where(o => selectedSupplierIds.Contains(o.SupplierId));
 
             }
-            if (selectedOrderItemIds!=null  && selectedOrderItemIds.Length>0)
+            if (selectedOrderItemIds != null && selectedOrderItemIds.Length > 0)
             {
 
-                orders = orders.Where(o=> o.OrderItems.Any(oi=>selectedOrderItemIds.Contains(oi.Name)));
+                orders = orders.Where(o => o.OrderItems.Any(oi => selectedOrderItemIds.Contains(oi.Name)));
 
             }
-            if(!String.IsNullOrEmpty(hiddenToDate)&&!String.IsNullOrEmpty(hiddenFromDate))
+            if (!String.IsNullOrEmpty(hiddenToDate) && !String.IsNullOrEmpty(hiddenFromDate))
             {
                 DateTime frmDate = DateTime.Parse(hiddenFromDate);
                 DateTime tDate = DateTime.Parse(hiddenToDate);
-                orders = orders.Where(o=> o.Date>=frmDate && o.Date<=tDate);
+                orders = orders.Where(o => o.Date >= frmDate && o.Date <= tDate);
             }
 
             switch (sortOrder)
@@ -132,7 +132,7 @@ namespace Orders.Controllers
             // Query the database or any other data source based on the 'term' parameter
             var orderNumbers = _context.Order
                 .Where(o => o.Number.Contains(term))
-                .Select(o => new { id = o.Id,number = o.Number })
+                .Select(o => new { id = o.Id, number = o.Number })
                 .Distinct()
                 .ToList();
 
@@ -185,6 +185,14 @@ namespace Orders.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Number,Date,SupplierId,OrderItems")] Order order)
         {
+            if (!IsOrderUnique(order.Number, order.SupplierId))
+            {
+                ModelState.AddModelError("", "Order with the same Number and Provider already exists.");
+
+            }
+
+
+
             if (ModelState.IsValid)
             {
                 Order o = new Order() { Number = order.Number, Date = order.Date, SupplierId = order.SupplierId };
@@ -199,6 +207,12 @@ namespace Orders.Controllers
             }
             ViewData["SupplierId"] = new SelectList(_context.Supplier, "Id", "Name", order.SupplierId);
             return View(order);
+        }
+
+        private bool IsOrderUnique(string number, int supplierId)
+        {
+            // Query the database or use Entity Framework to check uniqueness
+            return !_context.Order.Any(o => o.Number == number && o.SupplierId == supplierId);
         }
 
         // GET: Orders/Edit/5
