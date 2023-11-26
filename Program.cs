@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using MvcMovie.Data;
+using Orders.Data;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 var builder = WebApplication.CreateBuilder(args);
 // builder.Services.AddDbContext<OrdersApplicationDbContext>(options =>
 //     options.UseSqlite(builder.Configuration.GetConnectionString("OrdersApplicationDbContext") ?? throw new InvalidOperationException("Connection string 'OrdersApplicationDbContext' not found.")));
@@ -12,7 +15,24 @@ builder.Services.AddDbContext<OrdersApplicationDbContext>(options =>
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.AddMvc()
+        .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
+        .AddDataAnnotationsLocalization();
+builder.Services.Configure<RequestLocalizationOptions>(options=>
+{
+    var supportedCultrues =new[]
+    {
+        new CultureInfo("ru-RU"),
+    };
+    options.SupportedCultures = supportedCultrues;
+    options.SupportedUICultures = supportedCultrues;
+    options.DefaultRequestCulture = new RequestCulture("ru-RU");
+    
+});
+
 var app = builder.Build();
+app.UseRequestLocalization();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -31,6 +51,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Orders}/{action=Index}/{id?}");
 
 app.Run();

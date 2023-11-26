@@ -1,47 +1,260 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 @model IEnumerable<Orders.Models.Order>
+
+<style>
+    .action-link {
+        padding: 5px;
+        text-decoration: none;
+        color: #333;
+        margin-right: 5px;
+    }
+
+    .edit-link {
+        color: #007bff;
+        /* Blue color for edit link */
+    }
+
+    .details-link {
+        color: #28a745;
+        /* Green color for details link */
+    }
+
+    .delete-link {
+        color: #dc3545;
+        /* Red color for delete link */
+    }
+</style>
 
 @{
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+
+<h1>@Localizer["Orders"]</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">@Localizer["Create New"]</a>
 </p>
+<div class="container mt-4" style="border: 2px solid #000000; padding: 10px;">
+    <h2>@Localizer["Filters"]</h2>
+    <form action="@Url.Action("Index", "Orders")" method="get" id="filterForm" onsubmit="submitForm(event)">
+        <div class="form-group">
+            <label for="orderNumbers">@Localizer["Order Number:"]</label>
+            <select id="orderNumbers" name="selectedOrderNumbers" class="form-control" multiple="multiple">
+            </select>
+
+
+            <label for="selectedSuppliers">@Localizer["Suppliers:"]</label>
+            <select id="selectedSuppliers" name="selectedSupplierIds" class="form-control" multiple="multiple">
+                @foreach (var supplier in (List<Supplier>)ViewData["Suppliers"])
+                {
+                    <option value="@supplier.Id">@supplier.Name</option>
+                }
+            </select>
+
+            <label for="orderItems">@Localizer["Order Items:"]</label>
+            <select id="orderItems" name="selectedOrderItemIds" class="form-control" multiple="multiple">
+            </select>
+            <p></p>
+            <div class="row mb-3">
+
+
+                <label for="fromDate" class="col-sm-2 col-form-label">@Localizer["From Date:"]</label>
+                <div class="col-sm-4">
+                    <input type="date" class="form-control" id="fromDate" name="fromDate"
+                        value="@DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd")">
+                </div>
+                <label for="toDate" class="col-sm-2 col-form-label">@Localizer["To Date:"]</label>
+                <div class="col-sm-4">
+                    <input type="date" class="form-control" id="toDate" name="toDate"
+                        value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                </div>
+            </div>
+
+        </div>
+        <p></p>
+        <div class="form-group">
+            <input type="hidden" id="hiddenFromDate" name="hiddenFromDate" />
+            <input type="hidden" id="hiddenToDate" name="hiddenToDate" />
+            <input type="submit" value=@Localizer["Apply Filter"] class="btn btn-primary" />
+        </div>
+    </form>
+</div>
+<div style="text-align: center;">
+    <h2>@Localizer["Orders"]</h2>
+</div>
 <table class="table">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Number)
+                <a asp-action="Index"
+                    asp-route-sortOrder="@ViewData["NumberSortParm"]">@Localizer[Html.DisplayNameFor(model =>
+                    model.Number)]</a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Date)
+                <a asp-action="Index"
+                    asp-route-sortOrder="@ViewData["DateSortParm"]">@Localizer[Html.DisplayNameFor(model =>
+                    model.Date)]</a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.SupplierId)
+                @Localizer[Html.DisplayNameFor(model => model.Supplier)]
             </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Number)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Date)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.SupplierId)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Number)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Date)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Supplier.Name)
+                </td>
+                <td>
+                    <a asp-action="Edit" id="@item.Id" class="action-link edit-link"
+                        asp-route-id="@item.Id">@Localizer["Edit"]</a> |
+                    <a asp-action="Details" id="@item.Id" class="action-link details-link"
+                        asp-route-id="@item.Id">@Localizer["Details"]</a> |
+                    <a asp-action="Delete" id="@item.Id" class="action-link delete-link"
+                        onclick="return confirm(@Localizer["Are you sure you want to delete this item?"]);"
+                        asp-route-id="@item.Id">@Localizer["Delete"]</a>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
+
+@section Scripts {
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#orderNumbers').select2({
+                ajax: {
+                    url: '@Url.Action("GetOrderNumbers", "Orders")',
+                    dataType: 'json',
+                    delay: 250,
+                    processResults: function (data) {
+                        return {
+                            results: $.map(data, function (order) {
+                                return {
+                                    id: order.id,
+                                    text: order.number
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1 // Minimum characters before making an AJAX call
+            });
+
+            $('#orderItems').select2({
+                ajax: {
+                    url: '@Url.Action("GetOrderItems", "Orders")',
+                    dataType: 'json',
+                    delay: 250,
+                    processResults: function (data) {
+                        return {
+                            results: $.map(data, function (orderItem) {
+                                return {
+                                    id: orderItem.name,
+                                    text: orderItem.name
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1 // Minimum characters before making an AJAX call
+            });
+
+            $('#selectedSuppliers').select2();
+        });
+
+        function submitForm(event) {
+            // Prevent the default form submission
+            event.preventDefault();
+
+            // Get the values from date inputs
+            var startDateValue = document.getElementById('fromDate').value;
+            var endDateValue = document.getElementById('toDate').value;
+
+            // Set the values to hidden inputs
+            document.getElementById('hiddenFromDate').value = startDateValue;
+            document.getElementById('hiddenToDate').value = endDateValue;
+
+            // Continue submitting the form
+            document.getElementById('filterForm').submit();
+        }
+
+        @* $(function () {
+        $("#orderNumbers").autocomplete({
+        source: function (request, response) {
+        console.log('im here');
+        $.ajax({
+        url: '@Url.Action("GetAutocompleteValues", "Orders")',
+        type: "GET",
+        data: { term: request.term },
+        success: function (data) {
+        response(data);
+        }
+        });
+        },
+        minLength: 1,
+        multiple: true, // Enable multiple selection
+        select: function (event, ui) {
+        var terms = $("#orderNumbers").val().split(", ");
+        terms.pop();
+        terms.push(ui.item.value);
+        terms.push("");
+        $("#orderNumbers").val(terms.join(", "));
+
+        // Set the hidden input value with selected order numbers
+        $("#selectedOrderNumbers").val(terms.join(", "));
+        return false;
+        }
+        });
+
+        // Handle form submission to prevent duplicate values in the hidden input
+        $("#filterForm").submit(function () {
+        var terms = $("#orderNumbers").val().split(", ");
+        terms.pop();
+        $("#selectedOrderNumbers").val(terms.join(", "));
+        return true;
+        });
+        }); *@
+
+        @* $(document).ready(function () {
+        $('#selectedSuppliers').select2({
+        ajax: {
+        url: '@Url.Action("GetSuppliers", "Orders")',
+        dataType: 'json',
+        delay: 250,
+        processResults: function (data) {
+        return {
+        results: $.map(data, function (supplier) {
+        return {
+        id: supplier.id,
+        text: supplier.name
+        };
+        })
+        };
+        },
+        cache: true
+        },
+        minimumInputLength: 1 // Minimum characters before making an AJAX call
+        });
+
+
+        }); *@
+
+
+    </script>
+
+}

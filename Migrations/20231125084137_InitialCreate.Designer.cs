@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using MvcMovie.Data;
+using Orders.Data;
 
 #nullable disable
 
 namespace Orders.Migrations
 {
     [DbContext(typeof(OrdersApplicationDbContext))]
-    [Migration("20231118173846_InitialCreate")]
+    [Migration("20231125084137_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -37,12 +37,18 @@ namespace Orders.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Number")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("Number", "SupplierId")
+                        .IsUnique();
 
                     b.ToTable("Order");
                 });
@@ -56,6 +62,7 @@ namespace Orders.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("OrderId")
@@ -65,9 +72,12 @@ namespace Orders.Migrations
                         .HasColumnType("decimal(18, 3)");
 
                     b.Property<string>("Unit")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
 
                     b.ToTable("OrderItem");
                 });
@@ -81,11 +91,44 @@ namespace Orders.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Supplier");
+                });
+
+            modelBuilder.Entity("Orders.Models.Order", b =>
+                {
+                    b.HasOne("Orders.Models.Supplier", "Supplier")
+                        .WithMany("Orders")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("Orders.Models.OrderItem", b =>
+                {
+                    b.HasOne("Orders.Models.Order", "Order")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Orders.Models.Order", b =>
+                {
+                    b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("Orders.Models.Supplier", b =>
+                {
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

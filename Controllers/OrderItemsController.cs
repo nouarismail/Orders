@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using MvcMovie.Data;
+using Orders.Data;
 using Orders.Models;
 
 namespace Orders.Controllers
@@ -22,9 +22,8 @@ namespace Orders.Controllers
         // GET: OrderItems
         public async Task<IActionResult> Index()
         {
-              return _context.OrderItem != null ? 
-                          View(await _context.OrderItem.ToListAsync()) :
-                          Problem("Entity set 'OrdersApplicationDbContext.OrderItem'  is null.");
+            var ordersApplicationDbContext = _context.OrderItem.Include(o => o.Order);
+            return View(await ordersApplicationDbContext.ToListAsync());
         }
 
         // GET: OrderItems/Details/5
@@ -36,6 +35,7 @@ namespace Orders.Controllers
             }
 
             var orderItem = await _context.OrderItem
+                .Include(o => o.Order)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (orderItem == null)
             {
@@ -48,6 +48,7 @@ namespace Orders.Controllers
         // GET: OrderItems/Create
         public IActionResult Create()
         {
+            ViewData["OrderId"] = new SelectList(_context.Order, "Id", "Id");
             return View();
         }
 
@@ -64,6 +65,7 @@ namespace Orders.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            ViewData["OrderId"] = new SelectList(_context.Order, "Id", "Id", orderItem.OrderId);
             return View(orderItem);
         }
 
@@ -80,6 +82,7 @@ namespace Orders.Controllers
             {
                 return NotFound();
             }
+            ViewData["OrderId"] = new SelectList(_context.Order, "Id", "Id", orderItem.OrderId);
             return View(orderItem);
         }
 
@@ -115,6 +118,7 @@ namespace Orders.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            ViewData["OrderId"] = new SelectList(_context.Order, "Id", "Id", orderItem.OrderId);
             return View(orderItem);
         }
 
@@ -127,6 +131,7 @@ namespace Orders.Controllers
             }
 
             var orderItem = await _context.OrderItem
+                .Include(o => o.Order)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (orderItem == null)
             {

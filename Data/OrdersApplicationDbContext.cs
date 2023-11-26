@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Orders.Models;
 
-namespace MvcMovie.Data
+namespace Orders.Data
 {
     public class OrdersApplicationDbContext : DbContext
     {
