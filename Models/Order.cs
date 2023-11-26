@@ -18,7 +18,7 @@ namespace Orders.Models
             OrderItems = new List<OrderItem>();
         }
         public int Id { get; set; }
-        [Required]
+        [Required(ErrorMessage = "The Number field is required.")]
         [OrderItemName]
         public string Number { get; set; }
         [Column(TypeName = "datetime2")]

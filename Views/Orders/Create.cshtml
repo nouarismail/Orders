@@ -1,3 +1,5 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 @model Orders.Models.Order
 
 @{
@@ -9,24 +11,24 @@
 <div class="col-11 mx-auto pt-0 p-0" >
     <div class="card">
         <div class="card-header bg-success text-uppercase text-white" style="height: 45px;">
-            <h4>Create Order</h4>
+            <h4>@Localizer["Create Order"]</h4>
         </div>
 
         <form asp-action="Create">
             <div class="row">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <div class="form-group">
-                    <label asp-for="Number" class="control-label"></label>
+                    <label asp-for="Number" class="control-label">@Localizer["Number"]</label>
                     <input asp-for="Number" class="form-control" />
                     <span asp-validation-for="Number" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="Date" class="control-label"></label>
-                    <input asp-for="Date" class="form-control" />
+                    <label asp-for="Date" class="control-label">@Localizer["Date"]</label>
+                    <input asp-for="Date" value="@DateTime.Now.ToString()" class="form-control" />
                     <span asp-validation-for="Date" class="text-danger"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="SupplierId" class="control-label"></label>
+                    <label asp-for="SupplierId" class="control-label">@Localizer["Supplier"]</label>
                     <select asp-for="SupplierId" class="form-control" asp-items="ViewBag.SupplierId"></select>
                 </div>
 
@@ -38,13 +40,13 @@
 
                                 </th>
                                 <th style="text-align: center;">
-                                    Name
+                                    @Localizer["Name"]
                                 </th>
                                 <th style="text-align: center;">
-                                    Quantity
+                                    @Localizer["Quantity"]
                                 </th>
                                 <th style="text-align: center;">
-                                    Unit
+                                    @Localizer["Unit"]
                                 </th>
                                 <th>
 
@@ -102,18 +104,18 @@
                                             <button id="btndummy-@i" type="button"
                                                 class="btn btn-sm btn-secondary invisible">Dummyyyyyy</button>
                                             <button id="btnadd-@i" type="button" class="btn btn-sm btn-secondary invisible"
-                                                onclick="AddItem(this)" style="left:90%; position: absolute;">Add</button>
+                                                onclick="AddItem(this)" style="left:90%; position: absolute;">@Localizer["Add"]</button>
                                             <button id="btnremove-@i" type="button" class="btn btn-sm btn-danger visible"
-                                                onclick="DeleteItem(this)" style="left:90%; position:absolute;">Delete</button>
+                                                onclick="DeleteItem(this)" style="left:90%; position:absolute;">@Localizer["Delete"]</button>
                                         }
                                         else
                                         {
                                             <button id="btndummy-@i" type="button"
                                                 class="btn btn-sm btn-secondary invisible">Dummyyyyyy</button>
                                             <button id="btnadd-@i" type="button" class="btn btn-sm btn-secondary visible"
-                                                onclick="AddItem(this)" style="left:90%; position: absolute;">Add</button>
+                                                onclick="AddItem(this)" style="left:90%; position: absolute;">@Localizer["Add"]</button>
                                             <button id="btnremove-@i" type="button" class="btn btn-sm btn-danger invisible"
-                                                onclick="DeleteItem(this)" style="left:90%; position: absolute;">Delete</button>
+                                                onclick="DeleteItem(this)" style="left:90%; position: absolute;">@Localizer["Delete"]</button>
                                         }
 
                                     </td>
@@ -126,10 +128,10 @@
 
                 <div class="col-12 btn-group" style="text-align: center;">
                     <div class="col-6 form-group text-right p-2">
-                        <a asp-action="Index" class="btn btn-secondary">Index</a>
+                        <a asp-action="Index" class="btn btn-secondary">@Localizer["Index"]</a>
                     </div>
                     <div class="col-6 form-group text-left p-2">
-                        <input type="submit" value="Create " class="btn btn-primary" />
+                        <input type="submit" value=@Localizer["Create"] class="btn btn-primary" />
                     </div>
 
                 </div>

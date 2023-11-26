@@ -23,11 +23,12 @@ builder.Services.Configure<RequestLocalizationOptions>(options=>
 {
     var supportedCultrues =new[]
     {
-        new CultureInfo("en-US"),
-        new CultureInfo("ru-RU")
+        new CultureInfo("ru-RU"),
     };
-    options.DefaultRequestCulture = new RequestCulture("en-US");
+    options.SupportedCultures = supportedCultrues;
     options.SupportedUICultures = supportedCultrues;
+    options.DefaultRequestCulture = new RequestCulture("ru-RU");
+    
 });
 
 var app = builder.Build();

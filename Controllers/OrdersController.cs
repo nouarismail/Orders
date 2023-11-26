@@ -159,13 +159,16 @@ namespace Orders.Controllers
 
             var order = await _context.Order
                 .Include(o => o.Supplier)
+                .Include(o=>o.OrderItems)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (order == null)
             {
                 return NotFound();
             }
+            ViewData["SupplierId"] = new SelectList(_context.Supplier, "Id", "Name", order.SupplierId);
 
             return View(order);
+            
         }
 
         // GET: Orders/Create
